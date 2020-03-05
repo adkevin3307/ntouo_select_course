@@ -27,23 +27,6 @@ def login(driver, user):
     if EC.alert_is_present()(driver):
         raise LoginException
 
-def check_user(account, password):
-    options = webdriver.ChromeOptions()
-    options.add_experimental_option('excludeSwitches', ['enable-logging'])
-    options.add_argument('--headless')
-    with webdriver.Chrome(options = options) as driver:
-        try:
-            login(driver, {'account': account, 'password': password})
-
-            driver.switch_to.frame(driver.find_element_by_name('menuFrame'))
-            driver.implicitly_wait(30)
-            
-            driver.find_element_by_xpath("//a[@title='登出']").click()
-        except TimeoutError:
-            raise TimeoutError
-        except LoginException:
-            raise LoginException
-
 def select_course(driver, course, thread_name):
     driver.switch_to.frame(driver.find_element_by_name('menuFrame'))
     driver.implicitly_wait(30)
@@ -82,7 +65,7 @@ def select_course(driver, course, thread_name):
 
             classes = list(map(lambda x: x.text.split()[3], driver.find_elements_by_css_selector('#DataGrid1 tbody tr')[1: ]))
             driver.find_element_by_id('DataGrid1_ctl{:02}_edit'.format(2 + classes.index(course['class']))).click()
-        time.sleep(0.5)
+        time.sleep(2)
 
         while True:
             try:
@@ -109,6 +92,10 @@ def parallel(account, password, course):
             login(driver, {'account': account, 'password': password})
             if select_course(driver, {'id': course['course_id'], 'class': course['class_id']}, thread_name):
                 print(f'{thread_name} Success')
+        except TimeoutError:
+            print(f'{thread_name} ({course["course_id"]}): Timeout')
+        except LoginException:
+            print(f'{thread_name} ({course["course_id"]}): Account or Password Error')
         except CourseExistException:
             print(f'{thread_name} ({course["course_id"]}): No Such Course')
     print(f'==================== {thread_name} Done ====================')
@@ -117,22 +104,15 @@ if __name__ == '__main__':
     with open('config.yaml', 'r') as f:
         config = yaml.load(f, Loader = yaml.FullLoader)
 
-    try:
-        account = config['account']
-        password = config['password']
+    account = config['account']
+    password = config['password']
 
-        check_user(account, password)
+    threads = []
+    course_amount = len(config['courses'])
 
-        threads = []
-        course_amount = len(config['courses'])
-
-        for i in range(course_amount):
-            threads.append(threading.Thread(target = parallel, args = (account, password, config['courses'][i]), name = f'Thread {i + 1}'))
-            threads[i].start()
-        
-        for i in range(course_amount):
-            threads[i].join()
-    except TimeoutError:
-        print('Try Again Later')
-    except LoginException:
-        print('Account or Password Error')
+    for i in range(course_amount):
+        threads.append(threading.Thread(target = parallel, args = (account, password, config['courses'][i]), name = f'Thread {i + 1}'))
+        threads[i].start()
+    
+    for i in range(course_amount):
+        threads[i].join()
