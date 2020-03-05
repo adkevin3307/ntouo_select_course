@@ -9,7 +9,7 @@ Select NTOuO Course with Python.
 ## Quick Start
 * copy `config_example.yaml` to `config.yaml`
 * fill correct data into `config.yaml`
-* `python3 select.py`
+* `python3 main.py`
 
 ## Result
 This will select course until success.

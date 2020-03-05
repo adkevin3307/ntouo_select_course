@@ -19,13 +19,25 @@ def login(driver, user):
     try:
         WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.NAME, 'M_PORTAL_LOGIN_ACNT')))
         WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.NAME, 'M_PW')))
-    except TimeoutError as e:
-        raise e
+    except TimeoutError:
+        raise TimeoutError
     driver.find_element_by_name('M_PORTAL_LOGIN_ACNT').send_keys(user['account'])
     driver.find_element_by_name('M_PW').send_keys(user['password'])
     driver.find_element_by_id('LGOIN_BTN').click()
     if EC.alert_is_present()(driver):
         raise LoginException
+
+def check_user(account, password):
+    options = webdriver.ChromeOptions()
+    options.add_experimental_option('excludeSwitches', ['enable-logging'])
+    options.add_argument('--headless')
+    with webdriver.Chrome(options = options) as driver:
+        try:
+            login(driver, {'account': account, 'password': password})
+        except TimeoutError:
+            raise TimeoutError
+        except LoginException:
+            raise LoginException
 
 def select_course(driver, course, thread_name):
     driver.switch_to.frame(driver.find_element_by_name('menuFrame'))
@@ -82,37 +94,40 @@ def select_course(driver, course, thread_name):
     return True
 
 def parallel(account, password, course):
-    name = threading.current_thread().getName()
-    print(f'==================== {name} Start ====================')
+    thread_name = threading.current_thread().getName()
+    print(f'==================== {thread_name} Start ====================')
     options = webdriver.ChromeOptions()
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
     options.add_argument('--headless')
     with webdriver.Chrome(options = options) as driver:
         try:
             login(driver, {'account': account, 'password': password})
-            if select_course(driver, {'id': course['course_id'], 'class': course['class_id']}, name):
-                print(f'{name} Success')
-        except TimeoutError:
-            print(f'{name} Timeout')
-        except LoginException:
-            print(f'{name} Check Account and Password')
+            if select_course(driver, {'id': course['course_id'], 'class': course['class_id']}, thread_name):
+                print(f'{thread_name} Success')
         except CourseExistException:
-            print(f'{name} Check Course Id and Class')
-    print(f'==================== {name} Done ====================')
+            print(f'{thread_name}: No Such Course ({course['course_id']})')
+    print(f'==================== {thread_name} Done ====================')
 
 if __name__ == '__main__':
     with open('config.yaml', 'r') as f:
         config = yaml.load(f, Loader = yaml.FullLoader)
 
-    account = config['account']
-    password = config['password']
+    try:
+        account = config['account']
+        password = config['password']
 
-    threads = []
-    course_amount = len(config['courses'])
+        check_user(account, password)
 
-    for i in range(course_amount):
-        threads.append(threading.Thread(target = parallel, args = (account, password, config['courses'][i]), name = f'Thread {i + 1}'))
-        threads[i].start()
-    
-    for i in range(course_amount):
-        threads[i].join()
+        threads = []
+        course_amount = len(config['courses'])
+
+        for i in range(course_amount):
+            threads.append(threading.Thread(target = parallel, args = (account, password, config['courses'][i]), name = f'Thread {i + 1}'))
+            threads[i].start()
+        
+        for i in range(course_amount):
+            threads[i].join()
+    except TimeoutError:
+        print('Try Again Later')
+    except LoginException:
+        print('Account or Password Error')
