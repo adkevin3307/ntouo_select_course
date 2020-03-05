@@ -27,7 +27,7 @@ def login(driver, user):
     if EC.alert_is_present()(driver):
         raise LoginException
 
-def select_course(driver, course):
+def select_course(driver, course, thread_name):
     driver.switch_to.frame(driver.find_element_by_name('menuFrame'))
     driver.implicitly_wait(30)
 
@@ -76,29 +76,29 @@ def select_course(driver, course):
             time.sleep(1)
 
         selected = list(map(lambda x: tuple(x.text.split()[1: 3]), driver.find_elements_by_css_selector('#DataGrid3 tbody tr')[1: ]))
-
+        print(f'{thread_name}: {count} times')
         count += 1
 
-    print(f'{course['id']} select {count} times')
     return True
 
 def parallel(account, password, course):
-    print(f'==================== {threading.current_thread().getName()} Start ====================')
+    name = threading.current_thread().getName()
+    print(f'==================== {name} Start ====================')
     options = webdriver.ChromeOptions()
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
     options.add_argument('--headless')
     with webdriver.Chrome(options = options) as driver:
         try:
             login(driver, {'account': account, 'password': password})
-            if select_course(driver, {'id': course['course_id'], 'class': course['class_id']}):
-                print('Success')
+            if select_course(driver, {'id': course['course_id'], 'class': course['class_id']}, name):
+                print(f'{name} Success')
         except TimeoutError:
-            print('Please Try Again Later')
+            print(f'{name} Timeout')
         except LoginException:
-            print('Please Check Account and Password')
+            print(f'{name} Check Account and Password')
         except CourseExistException:
-            print('Please Check Course Id and Class')
-    print(f'==================== {threading.current_thread().getName()} Done ====================')
+            print(f'{name} Check Course Id and Class')
+    print(f'==================== {name} Done ====================')
 
 if __name__ == '__main__':
     with open('config.yaml', 'r') as f:
