@@ -36,7 +36,7 @@ def check_user(account, password):
             login(driver, {'account': account, 'password': password})
 
             driver.switch_to.frame(driver.find_element_by_name('menuFrame'))
-            dirver.implicitly_wait(30)
+            driver.implicitly_wait(30)
             
             driver.find_element_by_xpath("//a[@title='登出']").click()
         except TimeoutError:
