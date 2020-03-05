@@ -88,7 +88,7 @@ def select_course(driver, course, thread_name):
             time.sleep(1)
 
         selected = list(map(lambda x: tuple(x.text.split()[1: 3]), driver.find_elements_by_css_selector('#DataGrid3 tbody tr')[1: ]))
-        print(f'{thread_name}: {count} times')
+        print(f'{thread_name} ({course["id"]}): {count} times')
         count += 1
 
     return True
@@ -105,7 +105,7 @@ def parallel(account, password, course):
             if select_course(driver, {'id': course['course_id'], 'class': course['class_id']}, thread_name):
                 print(f'{thread_name} Success')
         except CourseExistException:
-            print(f'{thread_name}: No Such Course ({course["course_id"]})')
+            print(f'{thread_name} ({course["course_id"]}): No Such Course')
     print(f'==================== {thread_name} Done ====================')
 
 if __name__ == '__main__':
