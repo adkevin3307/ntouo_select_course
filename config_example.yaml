@@ -1,0 +1,7 @@
+account: 'Your Account'
+password: 'Your Password'
+courses:
+  - {course_id: 'First Course ID', class_id: 'First Class ID'}
+  - {course_id: 'Second Course ID', class_id: 'Second Class ID'}
+  - {course_id: 'Third Course ID', class_id: 'Third Class ID'}
+  - ...
