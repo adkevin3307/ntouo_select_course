@@ -105,7 +105,7 @@ def parallel(account, password, course):
             if select_course(driver, {'id': course['course_id'], 'class': course['class_id']}, thread_name):
                 print(f'{thread_name} Success')
         except CourseExistException:
-            print(f'{thread_name}: No Such Course ({course['course_id']})')
+            print(f'{thread_name}: No Such Course ({course["course_id"]})')
     print(f'==================== {thread_name} Done ====================')
 
 if __name__ == '__main__':
