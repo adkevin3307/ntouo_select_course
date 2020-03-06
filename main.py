@@ -73,7 +73,7 @@ def select_course(driver, course, thread_name):
                 alert.accept()
             except:
                 break
-            time.sleep(1)
+            time.sleep(1.5)
 
         selected = list(map(lambda x: tuple(x.text.split()[1: 3]), driver.find_elements_by_css_selector('#DataGrid3 tbody tr')[1: ]))
         print(f'{thread_name} ({course["id"]}): {count} times')
