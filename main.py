@@ -16,14 +16,14 @@ class CourseExistException(Exception):
 
 def login(driver, user):
     driver.get('https://ais.ntou.edu.tw/Default.aspx')
-    try:
-        WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.NAME, 'M_PORTAL_LOGIN_ACNT')))
-        WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.NAME, 'M_PW')))
-    except TimeoutError:
-        raise TimeoutError
+
+    WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.NAME, 'M_PORTAL_LOGIN_ACNT')))
+    WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.NAME, 'M_PW')))
+
     driver.find_element_by_name('M_PORTAL_LOGIN_ACNT').send_keys(user['account'])
     driver.find_element_by_name('M_PW').send_keys(user['password'])
     driver.find_element_by_id('LGOIN_BTN').click()
+
     if EC.alert_is_present()(driver):
         raise LoginException
 
@@ -45,6 +45,7 @@ def select_course(driver, course, thread_name):
 
     driver.find_element_by_name('Q_COSID').send_keys(course['id'])
     driver.find_element_by_name('QUERY_COSID_BTN').click()
+
     time.sleep(1)
 
     count = 1
@@ -58,23 +59,22 @@ def select_course(driver, course, thread_name):
         if total_rows == 1:
             driver.find_element_by_id('DataGrid1_ctl02_edit').click()
         else:
-            if int(driver.find_element_by_id('PC_PageSize').text) != 1000:
-                driver.execute_script('$("#PC_PageSize").attr("value", 1000)')
+            if int(driver.find_element_by_id('PC_PageSize').text) != 100:
+                driver.execute_script('$("#PC_PageSize").attr("value", 100)')
                 driver.find_element_by_id('PC_ShowRows').send_keys(Keys.ENTER)
-                time.sleep(1)
 
+            WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#DataGrid1 tbody tr')))
             classes = list(map(lambda x: x.text.split()[3], driver.find_elements_by_css_selector('#DataGrid1 tbody tr')[1: ]))
             driver.find_element_by_id('DataGrid1_ctl{:02}_edit'.format(2 + classes.index(course['class']))).click()
-        time.sleep(2)
 
         while True:
             try:
-                alert = EC.alert_is_present()(driver)
-                alert.accept()
+                WebDriverWait(driver, 3).until(EC.alert_is_present())
             except:
                 break
-            time.sleep(1.5)
+            driver.switch_to.alert.accept()
 
+        WebDriverWait(driver, 3).until(EC.presence_of_element_located((By.CSS_SELECTOR, '#DataGrid3 tbody tr')))
         selected = list(map(lambda x: tuple(x.text.split()[1: 3]), driver.find_elements_by_css_selector('#DataGrid3 tbody tr')[1: ]))
         print(f'{thread_name} ({course["id"]}): {count} times')
         count += 1
@@ -86,7 +86,7 @@ def parallel(account, password, course):
     print(f'==================== {thread_name} Start ====================')
     options = webdriver.ChromeOptions()
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
-    options.add_argument('--headless')
+    # options.add_argument('--headless')
     with webdriver.Chrome(options = options) as driver:
         try:
             login(driver, {'account': account, 'password': password})
